@@ -1,0 +1,127 @@
+body {
+    font-family: Segoe UI, sans-serif;
+    margin: 0;
+    padding: 1.25rem;
+    background: #1e1e1e;
+    color: #e6e6e6;
+}
+
+h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.status {
+    font-size: 0.9rem;
+    color: #9aa0a6;
+    margin-bottom: 1.25rem;
+}
+
+.status.connected {
+    color: #4caf50;
+}
+
+.status.error {
+    color: #e57373;
+}
+
+button {
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2d2d2d;
+    color: #e6e6e6;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #3a3a3a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+button.primary {
+    background: #0a84ff;
+    border-color: #0a84ff;
+    color: white;
+}
+
+.section {
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section h2 {
+    font-size: 1rem;
+    margin: 0 0 0.75rem 0;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.value {
+    color: #9aa0a6;
+    font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider-toggle {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #555;
+    border-radius: 24px;
+    transition: 0.15s;
+}
+
+.slider-toggle::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.15s;
+}
+
+.toggle input:checked + .slider-toggle {
+    background-color: #0a84ff;
+}
+
+.toggle input:checked + .slider-toggle::before {
+    transform: translateX(20px);
+}
+
+.toggle input:disabled + .slider-toggle {
+    opacity: 0.5;
+    cursor: default;
+}

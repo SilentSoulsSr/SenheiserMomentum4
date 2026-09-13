@@ -1,0 +1,95 @@
+@implements IDisposable
+@inject HeadsetService Headset
+
+<h1>Senheiser Momentum 4</h1>
+<div class="status @StatusCssClass">@Headset.Status</div>
+
+<div class="row">
+    <button class="primary" @onclick="Connect" disabled="@Headset.IsConnected">Connect</button>
+    <button @onclick="Disconnect" disabled="@(!Headset.IsConnected)">Disconnect</button>
+</div>
+
+<div class="section">
+    <h2>Active Noise Cancellation</h2>
+    <div class="row">
+        <span>ANC</span>
+        <label class="toggle">
+            <input type="checkbox" checked="@(Headset.AncEnabled == true)" disabled="@(!Headset.IsConnected)"
+                   @onchange="ToggleAnc" />
+            <span class="slider-toggle"></span>
+        </label>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Transparency</h2>
+    <div class="row">
+        <span>Level</span>
+        <span class="value">@(Headset.TransparencyLevel ?? 0)%</span>
+    </div>
+    <input type="range" min="0" max="100" value="@(Headset.TransparencyLevel ?? 0)"
+           disabled="@(!Headset.IsConnected)" @oninput="OnTransparencyInput" />
+</div>
+
+<div class="section">
+    <h2>Bass Boost</h2>
+    <div class="row">
+        <span>Enabled</span>
+        <label class="toggle">
+            <input type="checkbox" checked="@(Headset.BassBoostEnabled == true)" disabled="@(!Headset.IsConnected)"
+                   @onchange="ToggleBassBoost" />
+            <span class="slider-toggle"></span>
+        </label>
+    </div>
+</div>
+
+@code {
+    private string StatusCssClass
+    {
+        get
+        {
+            if (Headset.IsConnected) return "connected";
+            bool isTransient = Headset.Status.StartsWith("Searching", StringComparison.Ordinal)
+                                || Headset.Status.StartsWith("Disconnected", StringComparison.Ordinal);
+            return isTransient ? "" : "error";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Headset.Changed += OnHeadsetChanged;
+        _ = Connect();
+    }
+
+    private async Task Connect() => await Headset.ConnectAsync();
+
+    private async Task Disconnect() => await Headset.DisconnectAsync();
+
+    private async Task ToggleAnc(ChangeEventArgs e)
+    {
+        if (e.Value is bool enabled)
+        {
+            try { await Headset.SetAncAsync(enabled); } catch { /* Status reflects failure via Changed */ }
+        }
+    }
+
+    private async Task ToggleBassBoost(ChangeEventArgs e)
+    {
+        if (e.Value is bool enabled)
+        {
+            try { await Headset.SetBassBoostAsync(enabled); } catch { }
+        }
+    }
+
+    private async Task OnTransparencyInput(ChangeEventArgs e)
+    {
+        if (e.Value is string s && int.TryParse(s, out int level))
+        {
+            try { await Headset.SetTransparencyAsync(level); } catch { }
+        }
+    }
+
+    private void OnHeadsetChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Headset.Changed -= OnHeadsetChanged;
+}
