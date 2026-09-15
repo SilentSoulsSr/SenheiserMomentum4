@@ -7,10 +7,17 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UseWindowsForms>true</UseWindowsForms>
+        <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="10.0.101" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Assets\app.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

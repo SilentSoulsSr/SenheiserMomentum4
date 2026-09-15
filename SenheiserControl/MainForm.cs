@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.WebView.WindowsForms;
+﻿using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.DependencyInjection;
 using SenheiserControl.Components;
 using SenheiserControl.Services;
@@ -10,16 +10,17 @@ public sealed class MainForm : Form
     private readonly BlazorWebView _blazorWebView;
     private bool _allowClose;
 
-    public MainForm()
+    public MainForm(HeadsetService headsetService)
     {
         Text = "Senheiser Momentum 4 Control";
         Width = 480;
         Height = 640;
         StartPosition = FormStartPosition.CenterScreen;
+        Icon = new Icon(Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"));
 
         var services = new ServiceCollection();
         services.AddWindowsFormsBlazorWebView();
-        services.AddSingleton<HeadsetService>();
+        services.AddSingleton(headsetService);
 
         _blazorWebView = new BlazorWebView
         {

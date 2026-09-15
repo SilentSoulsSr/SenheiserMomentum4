@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <clipPath id="frame">
+      <rect x="0" y="0" width="256" height="256" rx="46" ry="46" />
+    </clipPath>
+    <pattern id="mesh" width="10" height="10" patternUnits="userSpaceOnUse">
+      <rect width="10" height="10" fill="#141416" />
+      <circle cx="5" cy="5" r="2.6" fill="#232427" />
+    </pattern>
+    <linearGradient id="plate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d6d8db" />
+      <stop offset="55%" stop-color="#9a9ea3" />
+      <stop offset="100%" stop-color="#6b6e73" />
+    </linearGradient>
+    <linearGradient id="plateSheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect x="0" y="0" width="256" height="256" fill="url(#mesh)" />
+
+    <g transform="rotate(-22 128 128)">
+      <rect x="38" y="98" width="180" height="60" rx="16" fill="#101012" opacity="0.55" transform="translate(3,5)" />
+      <rect x="38" y="98" width="180" height="60" rx="16" fill="url(#plate)" stroke="#3a3b3d" stroke-width="2" />
+      <rect x="38" y="98" width="180" height="60" rx="16" fill="url(#plateSheen)" />
+
+      <g fill="#1b1c1e">
+        <rect x="88" y="106" width="60" height="15" rx="7.5" transform="rotate(30 118 113.5)" />
+        <rect x="108" y="128" width="60" height="15" rx="7.5" transform="rotate(30 138 135.5)" />
+      </g>
+    </g>
+  </g>
+</svg>

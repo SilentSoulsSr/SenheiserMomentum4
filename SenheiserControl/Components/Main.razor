@@ -1,49 +1,160 @@
-@implements IDisposable
+﻿@implements IDisposable
 @inject HeadsetService Headset
 
-<h1>Senheiser Momentum 4</h1>
-<div class="status @StatusCssClass">@Headset.Status</div>
-
-<div class="row">
-    <button class="primary" @onclick="Connect" disabled="@Headset.IsConnected">Connect</button>
-    <button @onclick="Disconnect" disabled="@(!Headset.IsConnected)">Disconnect</button>
-</div>
-
-<div class="section">
-    <h2>Active Noise Cancellation</h2>
-    <div class="row">
-        <span>ANC</span>
-        <label class="toggle">
-            <input type="checkbox" checked="@(Headset.AncEnabled == true)" disabled="@(!Headset.IsConnected)"
-                   @onchange="ToggleAnc" />
-            <span class="slider-toggle"></span>
-        </label>
+<div class="header">
+    <div class="header-icon">🎧</div>
+    <div class="header-text">
+        <h1>MOMENTUM 4</h1>
+        <div class="status @StatusCssClass">@Headset.Status</div>
     </div>
+    @if (Headset.BatteryPercent is { } battery)
+    {
+        <div class="battery">🔋 @battery%</div>
+    }
 </div>
 
-<div class="section">
-    <h2>Transparency</h2>
-    <div class="row">
-        <span>Level</span>
-        <span class="value">@(Headset.TransparencyLevel ?? 0)%</span>
-    </div>
-    <input type="range" min="0" max="100" value="@(Headset.TransparencyLevel ?? 0)"
-           disabled="@(!Headset.IsConnected)" @oninput="OnTransparencyInput" />
-</div>
+<ErrorBoundary @ref="_errorBoundary">
+    <ChildContent>
+        <div class="row" style="margin-bottom:1rem">
+            <button class="primary" @onclick="Connect" disabled="@Headset.IsConnected">Connect</button>
+            <button @onclick="Disconnect" disabled="@(!Headset.IsConnected)">Disconnect</button>
+        </div>
 
-<div class="section">
-    <h2>Bass Boost</h2>
-    <div class="row">
-        <span>Enabled</span>
-        <label class="toggle">
-            <input type="checkbox" checked="@(Headset.BassBoostEnabled == true)" disabled="@(!Headset.IsConnected)"
-                   @onchange="ToggleBassBoost" />
-            <span class="slider-toggle"></span>
-        </label>
-    </div>
-</div>
+        <div class="card">
+            <h2>🔗 Connections</h2>
+            @if (!Headset.IsConnected)
+            {
+                <div class="value">Connect to see paired devices.</div>
+            }
+            else if (Headset.Peers.Count == 0)
+            {
+                <div class="value">No connected devices reported.</div>
+            }
+            else
+            {
+                @foreach (var peer in Headset.Peers)
+                {
+                    bool isThisPc = peer.Index == Headset.OwnPeerIndex;
+                    bool isConnected = peer.ConnectionType != 0;
+                    <div class="connection-row">
+                        <span class="dot @(isConnected ? "connected" : "disconnected")"></span>
+                        <span class="connection-icon">@(isThisPc ? "🖥️" : "💻")</span>
+                        <span class="connection-name">@(string.IsNullOrEmpty(peer.Name) ? $"Device {peer.Index}" : peer.Name)</span>
+                        <span class="value">@(isThisPc ? "Controller" : peer.ConnectionTypeLabel)</span>
+                        @if (!isThisPc)
+                        {
+                            <button @onclick="@(() => ConnectPeer(peer.Index))">Listen here</button>
+                            @if (isConnected)
+                            {
+                                <button @onclick="@(() => DisconnectPeer(peer.Index))">Disconnect</button>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="card">
+            <h2>🔊 Noise Control</h2>
+            <div class="segmented">
+                @foreach (var mode in NoiseModes)
+                {
+                    <button class="@(Headset.NoiseControlMode == mode ? "active" : "")"
+                            disabled="@(!Headset.IsConnected)"
+                            @onclick="@(() => SetNoiseControlMode(mode))">@mode</button>
+                }
+            </div>
+            <input type="range" min="0" max="100" value="@(Headset.TransparencyLevel ?? 0)"
+                   disabled="@(!Headset.IsConnected || Headset.NoiseControlMode != NoiseControlMode.Custom)"
+                   @onchange="OnTransparencyInput" />
+            <div class="slider-labels"><span>ANC</span><span>Transparency</span></div>
+
+            <div class="value" style="margin-bottom:0.4rem">Anti-Wind</div>
+            <div class="segmented">
+                @foreach (var mode in AntiWindModes)
+                {
+                    <button class="@(Headset.AntiWind == mode ? "active" : "")"
+                            disabled="@(!Headset.IsConnected)"
+                            @onclick="@(() => SetAntiWind(mode))">@mode</button>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎚️ Sound Mode</h2>
+            <div class="segmented">
+                @foreach (var mode in SoundModes)
+                {
+                    <button class="@(Headset.SoundMode == mode ? "active" : "")"
+                            disabled="@(!Headset.IsConnected)"
+                            @onclick="@(() => SetSoundMode(mode))">@FormatSoundMode(mode)</button>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎛️ Equalizer</h2>
+            <div class="row">
+                <span>Bass Boost</span>
+                <label class="toggle">
+                    <input type="checkbox" checked="@(Headset.BassBoostEnabled == true)" disabled="@(!Headset.IsConnected)"
+                           @onchange="ToggleBassBoost" />
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+
+            @if (Headset.EqBandCount == 0)
+            {
+                <div class="value">@(Headset.IsConnected ? "No EQ data yet." : "Connect to load the equalizer.")</div>
+            }
+            else
+            {
+                var labels = EqPresets.LabelsFor(Headset.EqBandCount);
+
+                <div class="eq-presets">
+                    @foreach (var preset in EqPresets.FiveBand)
+                    {
+                        <button disabled="@(!Headset.IsConnected)" @onclick="@(() => ApplyPreset(preset.GainsDb))">@preset.Name</button>
+                    }
+                </div>
+
+                <div class="eq-vertical-row">
+                    @for (int i = 0; i < _displayGains.Length; i++)
+                    {
+                        int bandIndex = i;
+                        <div class="eq-band-vertical">
+                            <span class="value">@_displayGains[bandIndex].ToString("+0.0;-0.0;0.0")</span>
+                            <input type="range" min="@Headset.EqMinGainDb" max="@Headset.EqMaxGainDb" step="0.1"
+                                   value="@_displayGains[bandIndex]" disabled="@(!Headset.IsConnected)"
+                                   @oninput="@(e => OnEqBandPreview(bandIndex, e))"
+                                   @onchange="@(e => OnEqBandInput(bandIndex, e))" />
+                            <span class="value">@(bandIndex < labels.Length ? labels[bandIndex] : $"Band {bandIndex + 1}")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </ChildContent>
+    <ErrorContent Context="ex">
+        <div class="status error">@ex.Message</div>
+        <button @onclick="_errorBoundary!.Recover">Retry</button>
+    </ErrorContent>
+</ErrorBoundary>
 
 @code {
+    private ErrorBoundary? _errorBoundary;
+    private double[] _displayGains = [];
+
+    private static readonly NoiseControlMode[] NoiseModes = [NoiseControlMode.Adaptive, NoiseControlMode.Custom, NoiseControlMode.Off];
+    private static readonly AntiWindMode[] AntiWindModes = [AntiWindMode.Off, AntiWindMode.Maximum, AntiWindMode.Automatic];
+    private static readonly SoundMode[] SoundModes = [SoundMode.Equalizer, SoundMode.Podcast, SoundMode.SoundPersonalization];
+
+    private static string FormatSoundMode(SoundMode mode) => mode switch
+    {
+        SoundMode.SoundPersonalization => "Sound Personalization",
+        var m => m.ToString()
+    };
+
     private string StatusCssClass
     {
         get
@@ -58,20 +169,11 @@
     protected override void OnInitialized()
     {
         Headset.Changed += OnHeadsetChanged;
-        _ = Connect();
     }
 
     private async Task Connect() => await Headset.ConnectAsync();
 
     private async Task Disconnect() => await Headset.DisconnectAsync();
-
-    private async Task ToggleAnc(ChangeEventArgs e)
-    {
-        if (e.Value is bool enabled)
-        {
-            try { await Headset.SetAncAsync(enabled); } catch { /* Status reflects failure via Changed */ }
-        }
-    }
 
     private async Task ToggleBassBoost(ChangeEventArgs e)
     {
@@ -89,7 +191,67 @@
         }
     }
 
-    private void OnHeadsetChanged() => InvokeAsync(StateHasChanged);
+    private void OnEqBandPreview(int bandIndex, ChangeEventArgs e)
+    {
+        if (e.Value is string s && double.TryParse(s, out double gainDb) && bandIndex < _displayGains.Length)
+        {
+            _displayGains[bandIndex] = gainDb;
+        }
+    }
+
+    private async Task OnEqBandInput(int bandIndex, ChangeEventArgs e)
+    {
+        if (e.Value is string s && double.TryParse(s, out double gainDb))
+        {
+            try { await Headset.SetEqBandAsync(bandIndex, gainDb); } catch { }
+        }
+    }
+
+    private async Task ApplyPreset(double[] gainsDb)
+    {
+        try { await Headset.ApplyEqPresetAsync(gainsDb); } catch { }
+    }
+
+    private async Task SetNoiseControlMode(NoiseControlMode mode)
+    {
+        try { await Headset.SetNoiseControlModeAsync(mode); } catch { }
+    }
+
+    private async Task SetAntiWind(AntiWindMode mode)
+    {
+        try { await Headset.SetAntiWindAsync(mode); } catch { }
+    }
+
+    private async Task SetSoundMode(SoundMode mode)
+    {
+        try { await Headset.SetSoundModeAsync(mode); } catch { }
+    }
+
+    private async Task ConnectPeer(byte index)
+    {
+        try { await Headset.ConnectPeerAsync(index); } catch { }
+    }
+
+    private async Task DisconnectPeer(byte index)
+    {
+        try { await Headset.DisconnectPeerAsync(index); } catch { }
+    }
+
+    private void OnHeadsetChanged()
+    {
+        if (_displayGains.Length != Headset.EqBandGains.Count)
+        {
+            _displayGains = [.. Headset.EqBandGains];
+        }
+        else
+        {
+            for (int i = 0; i < _displayGains.Length; i++)
+            {
+                _displayGains[i] = Headset.EqBandGains[i];
+            }
+        }
+        InvokeAsync(StateHasChanged);
+    }
 
     public void Dispose() => Headset.Changed -= OnHeadsetChanged;
 }
