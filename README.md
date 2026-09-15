@@ -17,7 +17,7 @@ Not affiliated with or endorsed by Sennheiser. The protocol was reverse-engineer
 
 ## Screenshots
 
-_Coming soon._
+![Main window: connections, noise control, sound mode, and equalizer](docs/screenshots/main-window.png)
 
 ## Requirements
 
